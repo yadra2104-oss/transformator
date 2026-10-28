@@ -1,0 +1,896 @@
+<script>
+    (function() {
+        'use strict';
+        
+        // КОНСТАНТИ
+        var CLASS = 11;
+        var TOTAL = 20;
+        var QUESTION_TIME = 12;
+        var TOPIC = 'Змінний струм. Трансформатори';
+        var APPS_SCRIPT_URL = ''; // Вставте URL веб-застосунку
+        var SECRET = 'fiz11-2026-secret';
+        var TELEGRAM_BOT_TOKEN = '8977852457:AAH1jJz54Wb5WFxNn1CrpBlRKbML7Pf_2zs';
+        var TELEGRAM_CHAT_ID = '622617127';
+        
+        // Безпечне кодування
+        function safeBtoa(str) {
+            try {
+                return btoa(unescape(encodeURIComponent(str)));
+            } catch(e) {
+                var hash = 0;
+                for(var i = 0; i < str.length; i++) {
+                    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                    hash |= 0;
+                }
+                return 'hash_' + Math.abs(hash);
+            }
+        }
+        
+        var TEST_ID = safeBtoa(TOPIC + CLASS);
+        
+        // МИТТЄВЕ заповнення констант
+        document.getElementById('classDisplay').textContent = CLASS;
+        document.getElementById('classDisplay2').textContent = CLASS;
+        document.getElementById('totalDisplay').textContent = TOTAL;
+        document.getElementById('totalDisplay2').textContent = TOTAL;
+        document.getElementById('timeDisplay').textContent = QUESTION_TIME;
+        
+        // ПИТАННЯ (Питань: 10+10 = 20 ✓)
+        var QUESTIONS = [
+            // Змінний струм (10 питань)
+            {topic: 'ac', level: 1, q: 'Яка стандартна частота змінного струму в електромережі України?', 
+             options: ['50 Гц', '60 Гц', '100 Гц', '220 Гц'], answer: 0},
+            {topic: 'ac', level: 1, q: 'Діюче значення змінного струму — це значення такого постійного струму, що за той самий час виділяє...', 
+             options: ['Більше теплоти', 'Менше теплоти', 'Таку саму кількість теплоти', 'Не виділяє теплоти'], answer: 2},
+            {topic: 'ac', level: 2, q: 'Вольтметр у мережі показує 220 В. Це значення...', 
+             options: ['Амплітудне', 'Діюче', 'Середнє', 'Миттєве'], answer: 1},
+            {topic: 'ac', level: 2, q: 'Яка формула зв\'язує діюче та амплітудне значення напруги?', 
+             options: ['U = Um', 'U = Um/2', 'U = Um/√2', 'U = 2·Um'], answer: 2},
+            {topic: 'ac', level: 2, q: 'Яка формула для періоду коливань?', 
+             options: ['T = f', 'T = 1/f', 'T = 2πf', 'T = f²'], answer: 1},
+            {topic: 'ac', level: 3, q: 'Частота струму 10 Гц. Який період?', 
+             options: ['10 с', '1 с', '0.1 с', '0.01 с'], answer: 2},
+            {topic: 'ac', level: 3, q: 'Період коливань 0.02 с. Яка частота?', 
+             options: ['20 Гц', '50 Гц', '100 Гц', '5 Гц'], answer: 1},
+            {topic: 'ac', level: 3, q: 'За 2 секунди відбулося 100 повних коливань. Яка частота?', 
+             options: ['200 Гц', '50 Гц', '100 Гц', '25 Гц'], answer: 1},
+            {topic: 'ac', level: 4, q: 'Частота 20 Гц. Скільки коливань відбудеться за 5 секунд?', 
+             options: ['4', '20', '100', '25'], answer: 2},
+            {topic: 'ac', level: 4, q: 'Період 0.05 с. Скільки коливань відбудеться за 2 секунди?', 
+             options: ['10', '20', '40', '50'], answer: 2},
+            
+            // Трансформатори (10 питань)
+            {topic: 'trans', level: 1, q: 'На якому струмі працює трансформатор?', 
+             options: ['Лише на постійному', 'Лише на змінному', 'На будь-якому', 'Лише на імпульсному'], answer: 1},
+            {topic: 'trans', level: 1, q: 'Яке фізичне явище лежить в основі роботи трансформатора?', 
+             options: ['Електростатична взаємодія', 'Електромагнітна індукція', 
+                       'Теплова дія струму', 'Намагнічування постійним полем'], answer: 1},
+            {topic: 'trans', level: 2, q: 'N₁ = 200, N₂ = 100. Чому дорівнює коефіцієнт трансформації k?', 
+             options: ['0.5', '2', '100', '300'], answer: 1},
+            {topic: 'trans', level: 2, q: 'N₁ = 100, N₂ = 50, U₁ = 200 В. Яка напруга на вторинній обмотці?', 
+             options: ['400 В', '100 В', '50 В', '200 В'], answer: 1},
+            {topic: 'trans', level: 2, q: 'Потужність на вході 200 Вт, на виході 190 Вт. Який ККД?', 
+             options: ['90%', '95%', '100%', '85%'], answer: 1},
+            {topic: 'trans', level: 3, q: 'Чому енергію передають на великі відстані під високою напругою?', 
+             options: ['Щоб збільшити струм', 'Щоб зменшити втрати на нагрівання',
+                       'Щоб збільшити частоту', 'Для краси'], answer: 1},
+            {topic: 'trans', level: 3, q: 'N₁ = 400, N₂ = 200, U₁ = 200 В. Яка напруга U₂?', 
+             options: ['400 В', '100 В', '200 В', '50 В'], answer: 1},
+            {topic: 'trans', level: 3, q: 'Який трансформатор підвищує напругу?', 
+             options: ['Той, де N₂ < N₁', 'Той, де N₂ > N₁', 'Той, де N₂ = N₁', 'Будь-який'], answer: 1},
+            {topic: 'trans', level: 4, q: 'N₁ = 300, N₂ = 100, U₁ = 300 В. Яка напруга U₂?', 
+             options: ['900 В', '100 В', '300 В', '50 В'], answer: 1},
+            {topic: 'trans', level: 4, q: 'U₁ = 100 В, N₁ = 50, N₂ = 100. Яка напруга U₂?', 
+             options: ['50 В', '100 В', '200 В', '150 В'], answer: 2},
+        ];
+        
+        // STATE
+        var state = {
+            phase: 'start',
+            studentName: '',
+            studentGroup: '',
+            studentId: '',
+            questions: [],
+            currentQuestion: 0,
+            answers: [],
+            violations: 0,
+            timeLeft: QUESTION_TIME,
+            timerInterval: null,
+            lastViolationTime: 0,
+            autoTerminated: false,
+            protectionInitialized: false
+        };
+        
+        // ДОПОМІЖНІ ФУНКЦІЇ
+        function shuffle(arr) {
+            var result = arr.slice();
+            for(var i = result.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = result[i];
+                result[i] = result[j];
+                result[j] = temp;
+            }
+            return result;
+        }
+        
+        function normalizeName(name) {
+            return name.toLowerCase()
+                .replace(/[''`]/g, '')
+                .replace(/[^\w\sа-яіїєґ]/gi, '')
+                .split(/\s+/)
+                .filter(function(w) { return w.length > 0; })
+                .sort()
+                .join('_');
+        }
+        
+        function showToast(message) {
+            var container = document.getElementById('toastContainer');
+            var toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(function() { container.removeChild(toast); }, 300);
+            }, 2000);
+        }
+        
+        function showScreen(screenId) {
+            var screens = document.querySelectorAll('.screen');
+            for(var i = 0; i < screens.length; i++) {
+                screens[i].classList.remove('active');
+            }
+            document.getElementById(screenId).classList.add('active');
+        }
+        
+        // ЛОКАЛЬНИЙ ЗАХИСТ
+        function saveAttemptLocal(status, grade) {
+            try {
+                var registry = JSON.parse(localStorage.getItem(TEST_ID + '_registry') || '[]');
+                var existing = null;
+                for(var i = 0; i < registry.length; i++) {
+                    if(registry[i].id === state.studentId) {
+                        existing = registry[i];
+                        break;
+                    }
+                }
+                if(existing) {
+                    existing.status = status;
+                    existing.grade = grade;
+                    existing.date = new Date().toISOString();
+                } else {
+                    registry.push({
+                        id: state.studentId,
+                        name: state.studentName,
+                        status: status,
+                        grade: grade,
+                        date: new Date().toISOString()
+                    });
+                }
+                localStorage.setItem(TEST_ID + '_registry', JSON.stringify(registry));
+                localStorage.setItem(TEST_ID + '_student_' + state.studentId, JSON.stringify({
+                    status: status,
+                    grade: grade,
+                    date: new Date().toISOString()
+                }));
+                var cookieValue = encodeURIComponent(JSON.stringify({
+                    status: status,
+                    grade: grade,
+                    date: new Date().toISOString()
+                }));
+                document.cookie = TEST_ID + '_' + state.studentId + '=' + cookieValue + '; max-age=315360000; path=/';
+                sessionStorage.setItem(TEST_ID + '_student_' + state.studentId, JSON.stringify({
+                    status: status,
+                    grade: grade,
+                    date: new Date().toISOString()
+                }));
+            } catch(e) {
+                console.error('Local save error:', e);
+            }
+        }
+        
+        function checkAttemptLocal() {
+            try {
+                var sources = [
+                    function() {
+                        var registry = JSON.parse(localStorage.getItem(TEST_ID + '_registry') || '[]');
+                        for(var i = 0; i < registry.length; i++) {
+                            if(registry[i].id === state.studentId) return registry[i];
+                        }
+                        return null;
+                    },
+                    function() {
+                        var data = localStorage.getItem(TEST_ID + '_student_' + state.studentId);
+                        return data ? JSON.parse(data) : null;
+                    },
+                    function() {
+                        var cookies = document.cookie.split(';');
+                        for(var i = 0; i < cookies.length; i++) {
+                            var parts = cookies[i].trim().split('=');
+                            if(parts[0] === TEST_ID + '_' + state.studentId) {
+                                return JSON.parse(decodeURIComponent(parts[1]));
+                            }
+                        }
+                        return null;
+                    },
+                    function() {
+                        var data = sessionStorage.getItem(TEST_ID + '_student_' + state.studentId);
+                        return data ? JSON.parse(data) : null;
+                    }
+                ];
+                
+                for(var i = 0; i < sources.length; i++) {
+                    var result = sources[i]();
+                    if(result && result.status) {
+                        return result;
+                    }
+                }
+                return null;
+            } catch(e) {
+                console.error('Local check error:', e);
+                return null;
+            }
+        }
+        
+        function clearLocalAttempts(name) {
+            try {
+                var normalizedId = normalizeName(name);
+                var registry = JSON.parse(localStorage.getItem(TEST_ID + '_registry') || '[]');
+                registry = registry.filter(function(r) { return r.id !== normalizedId; });
+                localStorage.setItem(TEST_ID + '_registry', JSON.stringify(registry));
+                localStorage.removeItem(TEST_ID + '_student_' + normalizedId);
+                sessionStorage.removeItem(TEST_ID + '_student_' + normalizedId);
+                document.cookie = TEST_ID + '_' + normalizedId + '=; max-age=0; path=/';
+            } catch(e) {
+                console.error('Clear error:', e);
+            }
+        }
+        
+        // ХМАРНИЙ ЗАХИСТ
+        function checkCloud() {
+            if(!APPS_SCRIPT_URL) return Promise.resolve({ok: true, cloudAvailable: false});
+            
+            return fetch(APPS_SCRIPT_URL + '?action=check&secret=' + SECRET + '&testId=' + TEST_ID + '&studentId=' + state.studentId, {
+                method: 'GET',
+                mode: 'cors'
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if(data.ok) {
+                    return {ok: true, cloudAvailable: true, exists: data.exists, record: data.record};
+                } else {
+                    return {ok: false, cloudAvailable: false};
+                }
+            })
+            .catch(function(error) {
+                return {ok: false, cloudAvailable: false};
+            });
+        }
+        
+        function upsertCloud(status, grade, score, violations) {
+            if(!APPS_SCRIPT_URL) return Promise.resolve({ok: false});
+            
+            var params = new URLSearchParams({
+                action: 'upsert',
+                secret: SECRET,
+                testId: TEST_ID,
+                studentId: state.studentId,
+                name: state.studentName,
+                group: state.studentGroup,
+                class: CLASS,
+                topic: TOPIC,
+                date: new Date().toISOString(),
+                status: status,
+                grade: grade,
+                score: score,
+                violations: violations
+            });
+            
+            return fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'cors',
+                body: params
+            })
+            .then(function(response) { return response.json(); })
+            .catch(function(error) {
+                console.error('Cloud upsert error:', error);
+                return {ok: false};
+            });
+        }
+        
+        // TELEGRAM
+        function sendToTelegram(data) {
+            var message = '📝 *Результати тесту*\n\n' +
+                '👤 ' + data.name + '\n' +
+                '🏫 Група: ' + data.group + '\n' +
+                '📚 Клас: ' + CLASS + '\n' +
+                '📅 ' + new Date().toLocaleString('uk-UA') + '\n' +
+                '📖 Тема: ' + TOPIC + '\n\n' +
+                '✅ Правильних: ' + data.correct + '/' + TOTAL + ' (' + Math.round(data.correct/TOTAL*100) + '%)\n' +
+                '🎯 Оцінка: ' + data.grade + '/11\n' +
+                '⚠️ Порушень: ' + data.violations + 
+                (data.autoTerminated ? ' (автозавершення)' : '') + '\n\n' +
+                '📊 Відповіді:\n' + data.answersList;
+            
+            var url = 'https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage';
+            var body = JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: message,
+                parse_mode: 'Markdown'
+            });
+            
+            return fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: body
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if(data.ok) {
+                    return {ok: true};
+                } else {
+                    return {ok: false, error: data.description};
+                }
+            })
+            .catch(function(error) {
+                try {
+                    navigator.sendBeacon(url, body);
+                    return {ok: true, beacon: true};
+                } catch(e) {
+                    return {ok: false, error: 'Network error'};
+                }
+            });
+        }
+        
+        // ПЕРЕВІРКА БЛОКУВАННЯ
+        function checkBlock() {
+            return checkCloud().then(function(cloudResult) {
+                if(cloudResult.cloudAvailable) {
+                    if(cloudResult.exists) {
+                        return {blocked: true, source: 'cloud', record: cloudResult.record};
+                    } else {
+                        return {blocked: false, source: 'cloud'};
+                    }
+                } else {
+                    var localRecord = checkAttemptLocal();
+                    if(localRecord) {
+                        return {blocked: true, source: 'local', record: localRecord};
+                    } else {
+                        return {blocked: false, source: 'local'};
+                    }
+                }
+            });
+        }
+        
+        // ЛОГІКА ТЕСТУ
+        function startTest() {
+            var nameInput = document.getElementById('studentName');
+            var groupInput = document.getElementById('studentGroup');
+            
+            var name = nameInput.value.trim();
+            var group = groupInput.value.trim();
+            
+            if(!name || name.split(/\s+/).length < 2) {
+                showToast('Введіть прізвище та ім\'я');
+                return;
+            }
+            
+            state.studentName = name;
+            state.studentGroup = group || 'Не вказано';
+            state.studentId = normalizeName(name);
+            
+            checkBlock().then(function(result) {
+                if(result.blocked) {
+                    var message = '⚠️ Тест вже пройдено\n\n';
+                    message += '📅 Дата: ' + new Date(result.record.date).toLocaleString('uk-UA') + '\n';
+                    message += '🎯 Оцінка: ' + (result.record.grade || '—') + '/11\n';
+                    message += '📊 Статус: ' + (result.record.status === 'done' ? 'Завершено' : 'Не завершено');
+                    
+                    document.getElementById('blockMessage').innerHTML = message.replace(/\n/g, '<br>');
+                    showScreen('block-screen');
+                } else {
+                    var elem = document.documentElement;
+                    if(elem.requestFullscreen) {
+                        elem.requestFullscreen().catch(function(e) { console.log('Fullscreen denied'); });
+                    } else if(elem.webkitRequestFullscreen) {
+                        elem.webkitRequestFullscreen();
+                    } else if(elem.msRequestFullscreen) {
+                        elem.msRequestFullscreen();
+                    }
+                    
+                    state.questions = shuffle(QUESTIONS);
+                    state.answers = [];
+                    state.currentQuestion = 0;
+                    state.violations = 0;
+                    state.phase = 'quiz';
+                    
+                    // ІНІЦІАЛІЗАЦІЯ ЗАХИСТУ ПІСЛЯ ПОЧАТКУ ТЕСТУ
+                    initProtection();
+                    
+                    saveAttemptLocal('progress', 0);
+                    if(APPS_SCRIPT_URL) {
+                        upsertCloud('progress', 0, 0, 0);
+                    }
+                    
+                    showScreen('quiz-screen');
+                    loadQuestion();
+                }
+            });
+        }
+        
+        function loadQuestion() {
+            if(state.currentQuestion >= state.questions.length) {
+                finishTest();
+                return;
+            }
+            
+            var q = state.questions[state.currentQuestion];
+            var options = q.options.slice();
+            var indices = [0, 1, 2, 3];
+            indices = shuffle(indices);
+            
+            document.getElementById('currentQuestion').textContent = String(state.currentQuestion + 1).padStart(2, '0');
+            document.getElementById('progressFill').style.width = ((state.currentQuestion / TOTAL) * 100) + '%';
+            
+            var topicChip = document.getElementById('topicChip');
+            if(q.topic === 'ac') {
+                topicChip.textContent = '⚡ Змінний струм';
+                topicChip.className = 'topic-chip ac';
+            } else {
+                topicChip.textContent = '🔄 Трансформатори';
+                topicChip.className = 'topic-chip trans';
+            }
+            
+            document.getElementById('questionText').textContent = q.q;
+            
+            var container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            
+            for(var i = 0; i < indices.length; i++) {
+                var opt = document.createElement('div');
+                opt.className = 'option';
+                opt.textContent = String.fromCharCode(1040 + i) + '. ' + options[indices[i]];
+                opt.setAttribute('data-index', indices[i]);
+                opt.onclick = function() {
+                    selectAnswer(parseInt(this.getAttribute('data-index')));
+                };
+                container.appendChild(opt);
+            }
+            
+            startTimer();
+        }
+        
+        function startTimer() {
+            state.timeLeft = QUESTION_TIME;
+            updateTimerDisplay();
+            
+            clearInterval(state.timerInterval);
+            state.timerInterval = setInterval(function() {
+                state.timeLeft--;
+                updateTimerDisplay();
+                
+                if(state.timeLeft <= 0) {
+                    clearInterval(state.timerInterval);
+                    skipQuestion();
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            var circle = document.getElementById('timerProgress');
+            var circumference = 213.6;
+            var offset = circumference * (1 - state.timeLeft / QUESTION_TIME);
+            circle.style.strokeDashoffset = offset;
+            
+            document.getElementById('timerText').textContent = state.timeLeft;
+            
+            var container = document.getElementById('timerContainer');
+            var criticalThreshold = Math.min(5, QUESTION_TIME / 3);
+            if(state.timeLeft <= criticalThreshold) {
+                container.classList.add('timer-critical');
+            } else {
+                container.classList.remove('timer-critical');
+            }
+        }
+        
+        function selectAnswer(answerIndex) {
+            clearInterval(state.timerInterval);
+            
+            var q = state.questions[state.currentQuestion];
+            var isCorrect = answerIndex === q.answer;
+            
+            state.answers.push({
+                question: state.currentQuestion,
+                answer: answerIndex,
+                correct: isCorrect,
+                skipped: false
+            });
+            
+            var options = document.querySelectorAll('.option');
+            for(var i = 0; i < options.length; i++) {
+                if(parseInt(options[i].getAttribute('data-index')) === answerIndex) {
+                    options[i].classList.add('selected');
+                }
+            }
+            
+            setTimeout(function() {
+                state.currentQuestion++;
+                loadQuestion();
+            }, 300);
+        }
+        
+        function skipQuestion() {
+            state.answers.push({
+                question: state.currentQuestion,
+                answer: -1,
+                correct: false,
+                skipped: true
+            });
+            
+            state.currentQuestion++;
+            loadQuestion();
+        }
+        
+        function finishTest() {
+            clearInterval(state.timerInterval);
+            state.phase = 'results';
+            
+            var correct = 0;
+            var wrong = 0;
+            var skipped = 0;
+            
+            for(var i = 0; i < state.answers.length; i++) {
+                if(state.answers[i].skipped) {
+                    skipped++;
+                } else if(state.answers[i].correct) {
+                    correct++;
+                } else {
+                    wrong++;
+                }
+            }
+            
+            var grade = state.autoTerminated ? 0 : Math.round((correct / TOTAL) * 11);
+            
+            showScreen('result-screen');
+            
+            document.getElementById('resultGrade').textContent = grade;
+            document.getElementById('correctCount').textContent = correct;
+            document.getElementById('wrongCount').textContent = wrong;
+            document.getElementById('skipCount').textContent = skipped;
+            
+            var progress = document.getElementById('resultProgress');
+            var circumference = 553;
+            var offset = circumference * (1 - grade / 11);
+            setTimeout(function() {
+                progress.style.strokeDashoffset = offset;
+            }, 100);
+            
+            var dotsContainer = document.getElementById('resultDots');
+            dotsContainer.innerHTML = '';
+            for(var i = 0; i < state.answers.length; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'dot';
+                if(state.answers[i].skipped) {
+                    dot.classList.add('dot-skip');
+                    dot.textContent = '⏱';
+                } else if(state.answers[i].correct) {
+                    dot.classList.add('dot-correct');
+                    dot.textContent = '✓';
+                } else {
+                    dot.classList.add('dot-wrong');
+                    dot.textContent = '✗';
+                }
+                dotsContainer.appendChild(dot);
+            }
+            
+            saveAttemptLocal('done', grade);
+            if(APPS_SCRIPT_URL) {
+                upsertCloud('done', grade, correct, state.violations);
+            }
+            
+            var answersList = '';
+            for(var i = 0; i < state.answers.length; i++) {
+                if(state.answers[i].skipped) {
+                    answersList += (i+1) + '⏱ ';
+                } else if(state.answers[i].correct) {
+                    answersList += (i+1) + '✔ ';
+                } else {
+                    answersList += (i+1) + '✖ ';
+                }
+            }
+            
+            var statusDiv = document.getElementById('sendStatus');
+            statusDiv.textContent = '📤 Відправка результатів...';
+            
+            sendToTelegram({
+                name: state.studentName,
+                group: state.studentGroup,
+                correct: correct,
+                grade: grade,
+                violations: state.violations,
+                autoTerminated: state.autoTerminated,
+                answersList: answersList.trim()
+            }).then(function(result) {
+                if(result.ok) {
+                    statusDiv.textContent = '✅ Результати надіслано вчителю';
+                    statusDiv.style.color = '#10b981';
+                } else {
+                    statusDiv.textContent = '❌ Помилка відправки';
+                    statusDiv.style.color = '#ef4444';
+                    document.getElementById('retryBtn').style.display = 'block';
+                }
+            });
+        }
+        
+        // ЗАХИСТ ВІД СПИСУВАННЯ
+        function registerViolation(reason) {
+            if(state.phase !== 'quiz') return;
+            
+            var now = Date.now();
+            if(now - state.lastViolationTime < 1500) return;
+            
+            state.lastViolationTime = now;
+            state.violations++;
+            document.getElementById('violationCount').textContent = state.violations;
+            
+            console.log('Порушення зафіксовано:', reason, 'Всього:', state.violations);
+            showToast('⚠️ Порушення');
+            
+            if(state.violations >= 3) {
+                state.autoTerminated = true;
+                finishTest();
+            }
+        }
+        
+        function initProtection() {
+            if(state.protectionInitialized) return;
+            state.protectionInitialized = true;
+            
+            console.log('Захист ініціалізовано');
+            
+            // Visibility change
+            document.addEventListener('visibilitychange', function() {
+                if(document.hidden && state.phase === 'quiz') {
+                    registerViolation('visibility');
+                }
+            });
+            
+            // Window blur
+            window.addEventListener('blur', function() {
+                if(state.phase === 'quiz') {
+                    registerViolation('blur');
+                }
+            });
+            
+            // Fullscreen change
+            document.addEventListener('fullscreenchange', function() {
+                if(!document.fullscreenElement && state.phase === 'quiz') {
+                    document.getElementById('fullscreenOverlay').classList.add('active');
+                    registerViolation('fullscreen');
+                }
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if(state.phase !== 'quiz') return;
+                
+                // F12
+                if(e.keyCode === 123) {
+                    e.preventDefault();
+                    registerViolation('devtools');
+                }
+                
+                // Ctrl+Shift+I/J/C
+                if(e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+                    e.preventDefault();
+                    registerViolation('devtools');
+                }
+                
+                // Ctrl+C/V/X/U/S/P/A
+                if(e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || e.keyCode === 88 || 
+                                 e.keyCode === 85 || e.keyCode === 83 || e.keyCode === 80 || e.keyCode === 65)) {
+                    e.preventDefault();
+                    registerViolation('copy');
+                }
+                
+                // PrintScreen
+                if(e.keyCode === 44) {
+                    e.preventDefault();
+                    registerViolation('screenshot');
+                    if(navigator.clipboard) {
+                        navigator.clipboard.writeText('').catch(function(){});
+                    }
+                }
+            });
+            
+            // Right click
+            document.addEventListener('contextmenu', function(e) {
+                if(state.phase === 'quiz') {
+                    e.preventDefault();
+                    registerViolation('context');
+                }
+            });
+            
+            // Copy/paste events
+            document.addEventListener('copy', function(e) {
+                if(state.phase === 'quiz') {
+                    e.preventDefault();
+                    registerViolation('copy');
+                }
+            });
+            
+            document.addEventListener('cut', function(e) {
+                if(state.phase === 'quiz') {
+                    e.preventDefault();
+                    registerViolation('cut');
+                }
+            });
+            
+            document.addEventListener('paste', function(e) {
+                if(state.phase === 'quiz') {
+                    e.preventDefault();
+                    registerViolation('paste');
+                }
+            });
+            
+            // Drag
+            document.addEventListener('dragstart', function(e) {
+                if(state.phase === 'quiz') {
+                    e.preventDefault();
+                    registerViolation('drag');
+                }
+            });
+            
+            // Beforeunload
+            window.addEventListener('beforeunload', function(e) {
+                if(state.phase === 'quiz') {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
+        }
+        
+        function returnToTest() {
+            document.getElementById('fullscreenOverlay').classList.remove('active');
+            var elem = document.documentElement;
+            if(elem.requestFullscreen) {
+                elem.requestFullscreen().catch(function(e) { console.log('Fullscreen denied'); });
+            }
+        }
+        
+        // CANVAS ЧАСТИНКИ
+        function initCanvas() {
+            var canvas = document.getElementById('particles-canvas');
+            var ctx = canvas.getContext('2d');
+            
+            var isMobile = window.innerWidth < 700 || window.matchMedia('(pointer: coarse)').matches;
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            var particles = [];
+            var particleCount = isMobile ? 20 : 50;
+            
+            for(var i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 2 + 1,
+                    color: 'rgba(102, 126, 234, 0.3)'
+                });
+            }
+            
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                for(var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    
+                    if(!isMobile) {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        
+                        if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                        if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                    }
+                }
+                
+                if(!isMobile) {
+                    requestAnimationFrame(draw);
+                }
+            }
+            
+            draw();
+            
+            window.addEventListener('resize', function() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                if(isMobile) draw();
+            });
+        }
+        
+        // ІНІЦІАЛІЗАЦІЯ
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            var unlockParam = urlParams.get('unlock');
+            if(unlockParam) {
+                if(unlockParam === 'all') {
+                    var registry = JSON.parse(localStorage.getItem(TEST_ID + '_registry') || '[]');
+                    for(var i = 0; i < registry.length; i++) {
+                        clearLocalAttempts(registry[i].name);
+                    }
+                    alert('✅ Всі локальні спроби очищено');
+                } else {
+                    clearLocalAttempts(unlockParam);
+                    alert('✅ Спроба учня ' + unlockParam + ' очищена');
+                }
+                history.replaceState(null, '', window.location.pathname);
+            }
+            
+            initCanvas();
+            
+            document.getElementById('startBtn').addEventListener('click', startTest);
+            
+            document.getElementById('retryBtn').addEventListener('click', function() {
+                var statusDiv = document.getElementById('sendStatus');
+                statusDiv.textContent = '📤 Повторна відправка...';
+                
+                var correct = parseInt(document.getElementById('correctCount').textContent);
+                var grade = parseInt(document.getElementById('resultGrade').textContent);
+                
+                var answersList = '';
+                for(var i = 0; i < state.answers.length; i++) {
+                    if(state.answers[i].skipped) {
+                        answersList += (i+1) + '⏱ ';
+                    } else if(state.answers[i].correct) {
+                        answersList += (i+1) + '✔ ';
+                    } else {
+                        answersList += (i+1) + '✖ ';
+                    }
+                }
+                
+                sendToTelegram({
+                    name: state.studentName,
+                    group: state.studentGroup,
+                    correct: correct,
+                    grade: grade,
+                    violations: state.violations,
+                    autoTerminated: state.autoTerminated,
+                    answersList: answersList.trim()
+                }).then(function(result) {
+                    if(result.ok) {
+                        statusDiv.textContent = '✅ Результати надіслано вчителю';
+                        statusDiv.style.color = '#10b981';
+                        document.getElementById('retryBtn').style.display = 'none';
+                    } else {
+                        statusDiv.textContent = '❌ Помилка відправки';
+                        statusDiv.style.color = '#ef4444';
+                    }
+                });
+            });
+            
+            document.getElementById('studentName').addEventListener('blur', function() {
+                var name = this.value.trim();
+                if(name && name.split(/\s+/).length >= 2) {
+                    state.studentId = normalizeName(name);
+                    checkBlock().then(function(result) {
+                        if(result.blocked) {
+                            showToast('⚠️ Цей учень вже проходив тест');
+                        }
+                    });
+                }
+            });
+            
+        } catch(e) {
+            console.error('Init error:', e);
+        }
+        
+    })();
+</script>
